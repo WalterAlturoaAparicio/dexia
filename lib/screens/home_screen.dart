@@ -1,0 +1,250 @@
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
+
+import '../models/prediction.dart';
+import '../services/classifier_service.dart';
+import 'result_screen.dart';
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final ImagePicker _picker = ImagePicker();
+  File? _imagenSeleccionada;
+  bool _cargando = false;
+  String? _mensajeError;
+
+  // ── Permisos ──────────────────────────────────────────────────────────────
+
+  Future<bool> _solicitarPermisoCamara() async {
+    final status = await Permission.camera.request();
+    if (status.isPermanentlyDenied) {
+      _mostrarDialogoPermiso('Cámara');
+      return false;
+    }
+    return status.isGranted;
+  }
+
+  Future<bool> _solicitarPermisoGaleria() async {
+    final status = await Permission.photos.request();
+    if (status.isPermanentlyDenied) {
+      _mostrarDialogoPermiso('Galería de fotos');
+      return false;
+    }
+    return status.isGranted || status.isLimited;
+  }
+
+  void _mostrarDialogoPermiso(String permiso) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Permiso de $permiso requerido'),
+        content: Text(
+          'Se necesita acceso a $permiso para clasificar aves. '
+          'Habilítalo en los ajustes de la aplicación.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              openAppSettings();
+            },
+            child: const Text('Abrir ajustes'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Selección de imagen ───────────────────────────────────────────────────
+
+  Future<void> _tomarFoto() async {
+    if (!await _solicitarPermisoCamara()) return;
+    final xFile = await _picker.pickImage(
+      source: ImageSource.camera,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 90,
+    );
+    if (xFile != null) await _procesarImagen(xFile);
+  }
+
+  Future<void> _seleccionarDeGaleria() async {
+    if (!await _solicitarPermisoGaleria()) return;
+    final xFile = await _picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      maxHeight: 1024,
+    );
+    if (xFile != null) await _procesarImagen(xFile);
+  }
+
+  // ── Inferencia ────────────────────────────────────────────────────────────
+
+  Future<void> _procesarImagen(XFile xFile) async {
+    setState(() {
+      _imagenSeleccionada = File(xFile.path);
+      _cargando = true;
+      _mensajeError = null;
+    });
+
+    try {
+      final Uint8List bytes = await xFile.readAsBytes();
+      final ResultadoInferencia resultado =
+          await ClassifierService.instance.classify(bytes);
+
+      if (!mounted) return;
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ResultScreen(
+            imagenFile: _imagenSeleccionada!,
+            resultado: resultado,
+          ),
+        ),
+      );
+    } catch (e) {
+      setState(() {
+        _mensajeError = 'Error al clasificar: ${e.toString()}';
+      });
+    } finally {
+      if (mounted) setState(() => _cargando = false);
+    }
+  }
+
+  // ── UI ────────────────────────────────────────────────────────────────────
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      appBar: AppBar(
+        title: const Text('Clasificador de Aves'),
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
+        elevation: 2,
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Área de imagen
+              Expanded(
+                child: _imagenSeleccionada != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.file(
+                          _imagenSeleccionada!,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : _PlaceholderImagen(colorScheme: colorScheme),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Estado de carga
+              if (_cargando)
+                const Column(
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 8),
+                    Text(
+                      'Identificando ave...',
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 16),
+                  ],
+                ),
+
+              // Mensaje de error
+              if (_mensajeError != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Text(
+                    _mensajeError!,
+                    style: TextStyle(color: colorScheme.error),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+
+              // Botones de acción
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: _cargando ? null : _tomarFoto,
+                      icon: const Icon(Icons.camera_alt),
+                      label: const Text('Cámara'),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: FilledButton.tonalIcon(
+                      onPressed: _cargando ? null : _seleccionarDeGaleria,
+                      icon: const Icon(Icons.photo_library),
+                      label: const Text('Galería'),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PlaceholderImagen extends StatelessWidget {
+  final ColorScheme colorScheme;
+  const _PlaceholderImagen({required this.colorScheme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.outlineVariant, width: 2),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.photo_camera_outlined,
+              size: 72, color: colorScheme.primary),
+          const SizedBox(height: 16),
+          Text(
+            'Toma o selecciona una foto\npara identificar el ave',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}

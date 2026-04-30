@@ -1,0 +1,18 @@
+{
+  "0":  {"id": "ardea-alba",               "nombre": "Garza real",           "cientifico": "Ardea alba"},
+  "1":  {"id": "atlapetes-latinuchus",     "nombre": "Atlapetes dorsirrufo", "cientifico": "Atlapetes latinuchus"},
+  "2":  {"id": "butorides-striata",        "nombre": "Garcita rayada",       "cientifico": "Butorides striata"},
+  "3":  {"id": "chlorochrysa-nitidissima", "nombre": "Tangara multicolor",   "cientifico": "Chlorochrysa nitidissima"},
+  "4":  {"id": "colibri-coruscans",        "nombre": "Colibr\u00ed chillon",       "cientifico": "Colibri coruscans"},
+  "5":  {"id": "common-gallinule",         "nombre": "Polla de agua",        "cientifico": "Gallinula galeata"},
+  "6":  {"id": "metallura-tyrianthina",    "nombre": "Metalura tiria",       "cientifico": "Metallura tyrianthina"},
+  "7":  {"id": "momotus-aequatorialis",    "nombre": "Momoto monta\u00f1ero",     "cientifico": "Momotus aequatorialis"},
+  "8":  {"id": "phimosus-infuscatus",      "nombre": "Ibis caripelado",      "cientifico": "Phimosus infuscatus"},
+  "9":  {"id": "piaya-cayana",             "nombre": "Cuco ardilla",         "cientifico": "Piaya cayana"},
+  "10": {"id": "pitangus-sulphuratus",     "nombre": "Bicho\u00fae grit\u00f3n",        "cientifico": "Pitangus sulphuratus"},
+  "11": {"id": "ramphastos-ambiguus",      "nombre": "Tuc\u00e1n pico negro",      "cientifico": "Ramphastos ambiguus"},
+  "12": {"id": "sicalis-flaveola",         "nombre": "Canario coronado",     "cientifico": "Sicalis flaveola"},
+  "13": {"id": "thraupis-episcopus",       "nombre": "Azulejo com\u00fan",        "cientifico": "Thraupis episcopus"},
+  "14": {"id": "turdus-fuscater",          "nombre": "Mirla negra",          "cientifico": "Turdus fuscater"},
+  "15": {"id": "zenaida-auriculata",       "nombre": "Torcaza naguiblanca",  "cientifico": "Zenaida auriculata"}
+}
