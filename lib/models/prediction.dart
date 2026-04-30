@@ -10,6 +10,20 @@ class BirdClass {
     required this.nombre,
     required this.cientifico,
   });
+
+  Map<String, dynamic> toMap() => {
+        'index': index,
+        'id': id,
+        'nombre': nombre,
+        'cientifico': cientifico,
+      };
+
+  factory BirdClass.fromMap(Map<String, dynamic> m) => BirdClass(
+        index: m['index'] as int,
+        id: m['id'] as String,
+        nombre: m['nombre'] as String,
+        cientifico: m['cientifico'] as String,
+      );
 }
 
 class Prediction {
@@ -27,4 +41,60 @@ class ResultadoInferencia {
     required this.top3,
     required this.tiempoInferencia,
   });
+}
+
+/// Represents a saved sighting stored locally (RF08).
+class Avistamiento {
+  final int? id;
+  final String imagenPath;
+  final String especieNombre;
+  final String especieCientifico;
+  final String especieId;
+  final double confianza;
+  final DateTime fechaHora;
+  final bool synced; // RF09 – will be used later for cloud sync
+
+  const Avistamiento({
+    this.id,
+    required this.imagenPath,
+    required this.especieNombre,
+    required this.especieCientifico,
+    required this.especieId,
+    required this.confianza,
+    required this.fechaHora,
+    this.synced = false,
+  });
+
+  Map<String, dynamic> toMap() => {
+        if (id != null) 'id': id,
+        'imagenPath': imagenPath,
+        'especieNombre': especieNombre,
+        'especieCientifico': especieCientifico,
+        'especieId': especieId,
+        'confianza': confianza,
+        'fechaHora': fechaHora.toIso8601String(),
+        'synced': synced ? 1 : 0,
+      };
+
+  factory Avistamiento.fromMap(Map<String, dynamic> m) => Avistamiento(
+        id: m['id'] as int?,
+        imagenPath: m['imagenPath'] as String,
+        especieNombre: m['especieNombre'] as String,
+        especieCientifico: m['especieCientifico'] as String,
+        especieId: m['especieId'] as String,
+        confianza: (m['confianza'] as num).toDouble(),
+        fechaHora: DateTime.parse(m['fechaHora'] as String),
+        synced: (m['synced'] as int) == 1,
+      );
+
+  Avistamiento copyWith({bool? synced, int? id}) => Avistamiento(
+        id: id ?? this.id,
+        imagenPath: imagenPath,
+        especieNombre: especieNombre,
+        especieCientifico: especieCientifico,
+        especieId: especieId,
+        confianza: confianza,
+        fechaHora: fechaHora,
+        synced: synced ?? this.synced,
+      );
 }

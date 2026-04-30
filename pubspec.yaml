@@ -1,27 +1,40 @@
-name: dex_ia
-description: "Clasificador de aves colombianas con EfficientNet-B0 ONNX."
+name: dexia_aves
+description: Clasificador de aves del Tolima con IA on-device.
 publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.9.2
+  sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.8
-  onnxruntime: ^1.4.1
+
+  # Image capture (RF01)
   image_picker: ^1.1.2
-  image: ^4.2.0
   permission_handler: ^11.3.1
+
+  # On-device inference (RF02)
+  onnxruntime: ^1.4.0
+  image: ^4.2.0
+
+  # Local storage / SQLite (RF08)
+  sqflite: ^2.3.3+1
+  path: ^1.9.0
+
+  # Formatting dates in HistoryScreen
+  intl: ^0.19.0
+
+  # Icons (optional but nice)
+  cupertino_icons: ^1.0.8
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  flutter_lints: ^4.0.0
 
 flutter:
   uses-material-design: true
   assets:
-    - assets/classes.json
     - assets/efficientnet_b0_best.onnx
+    - assets/classes.json

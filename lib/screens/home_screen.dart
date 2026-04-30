@@ -8,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../models/prediction.dart';
 import '../services/classifier_service.dart';
 import 'result_screen.dart';
+import 'history_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -70,6 +71,64 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ── Selección de imagen ───────────────────────────────────────────────────
 
+  /// Shows a bottom sheet to let the user pick camera or gallery (RF01).
+  void _mostrarSelectorFuente() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Text(
+                'Seleccionar imagen',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const CircleAvatar(
+                  child: Icon(Icons.camera_alt),
+                ),
+                title: const Text('Tomar foto'),
+                subtitle: const Text('Usar la cámara del dispositivo'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _tomarFoto();
+                },
+              ),
+              ListTile(
+                leading: const CircleAvatar(
+                  child: Icon(Icons.photo_library),
+                ),
+                title: const Text('Elegir de galería'),
+                subtitle: const Text('Seleccionar una foto existente'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _seleccionarDeGaleria();
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _tomarFoto() async {
     if (!await _solicitarPermisoCamara()) return;
     final xFile = await _picker.pickImage(
@@ -91,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (xFile != null) await _procesarImagen(xFile);
   }
 
-  // ── Inferencia ────────────────────────────────────────────────────────────
+  // ── Inferencia (RF02) ─────────────────────────────────────────────────────
 
   Future<void> _procesarImagen(XFile xFile) async {
     setState(() {
@@ -133,10 +192,20 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        title: const Text('Clasificador de Aves'),
+        title: const Text('DexIA Aves'),
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
         elevation: 2,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Mis avistamientos',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const HistoryScreen()),
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Padding(
@@ -144,7 +213,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Área de imagen
+              // Imagen preview
               Expanded(
                 child: _imagenSeleccionada != null
                     ? ClipRRect(
@@ -159,21 +228,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 24),
 
-              // Estado de carga
               if (_cargando)
                 const Column(
                   children: [
                     CircularProgressIndicator(),
                     SizedBox(height: 8),
                     Text(
-                      'Identificando ave...',
+                      'Identificando ave…',
                       textAlign: TextAlign.center,
                     ),
                     SizedBox(height: 16),
                   ],
                 ),
 
-              // Mensaje de error
               if (_mensajeError != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16),
@@ -184,31 +251,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-              // Botones de acción
-              Row(
-                children: [
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: _cargando ? null : _tomarFoto,
-                      icon: const Icon(Icons.camera_alt),
-                      label: const Text('Cámara'),
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                    ),
+              // Single CTA button – opens source picker (RF01)
+              FilledButton.icon(
+                onPressed: _cargando ? null : _mostrarSelectorFuente,
+                icon: const Icon(Icons.add_a_photo),
+                label: const Text('Identificar ave'),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  textStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: FilledButton.tonalIcon(
-                      onPressed: _cargando ? null : _seleccionarDeGaleria,
-                      icon: const Icon(Icons.photo_library),
-                      label: const Text('Galería'),
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
           ),
@@ -237,7 +291,7 @@ class _PlaceholderImagen extends StatelessWidget {
               size: 72, color: colorScheme.primary),
           const SizedBox(height: 16),
           Text(
-            'Toma o selecciona una foto\npara identificar el ave',
+            'Toca el botón para fotografiar\no seleccionar un ave',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: colorScheme.onSurfaceVariant,

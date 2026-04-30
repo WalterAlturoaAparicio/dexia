@@ -3,8 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../models/prediction.dart';
+import '../services/database_service.dart';
 
-class ResultScreen extends StatelessWidget {
+class ResultScreen extends StatefulWidget {
   final File imagenFile;
   final ResultadoInferencia resultado;
 
@@ -15,9 +16,43 @@ class ResultScreen extends StatelessWidget {
   });
 
   @override
+  State<ResultScreen> createState() => _ResultScreenState();
+}
+
+class _ResultScreenState extends State<ResultScreen> {
+  bool _guardando = false;
+  bool _guardado = false;
+
+  /// RF08 – persists the sighting locally with SQLite.
+  Future<void> _guardarAvistamiento() async {
+    setState(() => _guardando = true);
+    try {
+      final top = widget.resultado.top3.first;
+      final av = Avistamiento(
+        imagenPath: widget.imagenFile.path,
+        especieNombre: top.ave.nombre,
+        especieCientifico: top.ave.cientifico,
+        especieId: top.ave.id,
+        confianza: top.confianza,
+        fechaHora: DateTime.now(),
+      );
+      await DatabaseService.instance.insertAvistamiento(av);
+      if (mounted) setState(() => _guardado = true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al guardar: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _guardando = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final top = resultado.top3.first;
+    final top = widget.resultado.top3.first;
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -36,15 +71,15 @@ class ResultScreen extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: Image.file(
-                  imagenFile,
-                  height: 280,
+                  widget.imagenFile,
+                  height: 260,
                   fit: BoxFit.cover,
                 ),
               ),
 
               const SizedBox(height: 24),
 
-              // Tarjeta de resultado principal
+              // Tarjeta resultado principal
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -56,11 +91,13 @@ class ResultScreen extends StatelessWidget {
                   children: [
                     Text(
                       top.ave.nombre,
-                      style:
-                          Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                color: colorScheme.onPrimaryContainer,
-                                fontWeight: FontWeight.bold,
-                              ),
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
+                          ?.copyWith(
+                            color: colorScheme.onPrimaryContainer,
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                     Text(
                       top.ave.cientifico,
@@ -83,6 +120,7 @@ class ResultScreen extends StatelessWidget {
 
               const SizedBox(height: 24),
 
+              // RF04 – Top 3 predicciones
               Text(
                 'Top 3 predicciones',
                 style: Theme.of(context)
@@ -92,7 +130,7 @@ class ResultScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
 
-              ...resultado.top3.asMap().entries.map((entry) {
+              ...widget.resultado.top3.asMap().entries.map((entry) {
                 return _BarraPrediccion(
                   rango: entry.key + 1,
                   prediccion: entry.value,
@@ -100,7 +138,7 @@ class ResultScreen extends StatelessWidget {
                 );
               }),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 8),
 
               // Tiempo de inferencia
               Row(
@@ -110,7 +148,7 @@ class ResultScreen extends StatelessWidget {
                       size: 16, color: colorScheme.outline),
                   const SizedBox(width: 4),
                   Text(
-                    'Tiempo de inferencia: ${resultado.tiempoInferencia.inMilliseconds} ms',
+                    'Inferencia: ${widget.resultado.tiempoInferencia.inMilliseconds} ms',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: colorScheme.outline,
                         ),
@@ -118,7 +156,31 @@ class ResultScreen extends StatelessWidget {
                 ],
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
+
+              // RF08 – Save button
+              _guardado
+                  ? _SavedBanner(colorScheme: colorScheme)
+                  : FilledButton.icon(
+                      onPressed: _guardando ? null : _guardarAvistamiento,
+                      icon: _guardando
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.bookmark_add),
+                      label: Text(
+                          _guardando ? 'Guardando…' : 'Guardar avistamiento'),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                    ),
+
+              const SizedBox(height: 12),
 
               OutlinedButton.icon(
                 onPressed: () => Navigator.pop(context),
@@ -131,6 +193,36 @@ class ResultScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _SavedBanner extends StatelessWidget {
+  final ColorScheme colorScheme;
+  const _SavedBanner({required this.colorScheme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      decoration: BoxDecoration(
+        color: colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.check_circle, color: colorScheme.secondary),
+          const SizedBox(width: 8),
+          Text(
+            'Avistamiento guardado localmente',
+            style: TextStyle(
+              color: colorScheme.onSecondaryContainer,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -159,7 +251,6 @@ class _BarraPrediccion extends StatelessWidget {
         children: [
           Row(
             children: [
-              // Insignia de rango
               Container(
                 width: 28,
                 height: 28,
@@ -203,7 +294,6 @@ class _BarraPrediccion extends StatelessWidget {
                   ],
                 ),
               ),
-              // Porcentaje
               Text(
                 '${(confianza * 100).toStringAsFixed(1)}%',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
