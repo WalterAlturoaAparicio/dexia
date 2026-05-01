@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:intl/date_symbol_data_local.dart';
+
 import 'screens/home_screen.dart';
 import 'services/classifier_service.dart';
+import 'theme/app_theme.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('es_CO');
   WidgetsFlutterBinding.ensureInitialized();
   await ClassifierService.instance.initialize();
   runApp(const DexIAApp());
@@ -44,12 +43,7 @@ class _DexIAAppState extends State<DexIAApp> with WidgetsBindingObserver {
     return MaterialApp(
       title: 'DexIA Aves',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2E7D32),
-        ),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.theme,
       home: const HomeScreen(),
     );
   }

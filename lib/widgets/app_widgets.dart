@@ -1,14 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../theme/app_theme.dart';
 import '../models/prediction.dart';
-// ignore: unused_element
-// needed by _Thumbnail
-import 'dart:io' show File;
+import '../theme/app_theme.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MainButtonCard  (used in HomeScreen 2×2 grid)
+// MainButtonCard
 // ─────────────────────────────────────────────────────────────────────────────
 class MainButtonCard extends StatefulWidget {
   final IconData icon;
@@ -57,12 +56,12 @@ class _MainButtonCardState extends State<MainButtonCard>
     super.dispose();
   }
 
-  Future<void> _onTapDown(_) async {
+  Future<void> _onTapDown(TapDownDetails _) async {
     await _ctrl.forward();
     HapticFeedback.lightImpact();
   }
 
-  Future<void> _onTapUp(_) async {
+  Future<void> _onTapUp(TapUpDetails _) async {
     await _ctrl.reverse();
     widget.onTap();
   }
@@ -99,13 +98,15 @@ class _MainButtonCardState extends State<MainButtonCard>
                     height: 56,
                     decoration: BoxDecoration(
                       color: widget.iconBg ?? AppTheme.greenLight,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                      borderRadius:
+                          BorderRadius.circular(AppTheme.radiusMd),
                     ),
-                    child: Icon(widget.icon,
-                        size: 28,
-                        color: widget.accent
-                            ? AppTheme.green
-                            : AppTheme.navy),
+                    child: Icon(
+                      widget.icon,
+                      size: 28,
+                      color:
+                          widget.accent ? AppTheme.green : AppTheme.navy,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   Text(
@@ -131,8 +132,8 @@ class _MainButtonCardState extends State<MainButtonCard>
                   top: 0,
                   right: 0,
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 7, vertical: 3),
                     decoration: BoxDecoration(
                       color: AppTheme.error,
                       borderRadius: BorderRadius.circular(99),
@@ -140,9 +141,10 @@ class _MainButtonCardState extends State<MainButtonCard>
                     child: Text(
                       '${widget.badge}',
                       style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800),
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                 ),
@@ -155,7 +157,7 @@ class _MainButtonCardState extends State<MainButtonCard>
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ConfidenceIndicator  (color-coded bar + label)
+// ConfidenceIndicator
 // ─────────────────────────────────────────────────────────────────────────────
 class ConfidenceIndicator extends StatelessWidget {
   final String birdName;
@@ -186,9 +188,7 @@ class ConfidenceIndicator extends StatelessWidget {
                   height: 6,
                   margin: const EdgeInsets.only(right: 6),
                   decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                  ),
+                      color: color, shape: BoxShape.circle),
                 ),
               Expanded(
                 child: Text(
@@ -197,17 +197,17 @@ class ConfidenceIndicator extends StatelessWidget {
                     fontSize: 13,
                     fontWeight:
                         isTop ? FontWeight.w800 : FontWeight.w600,
-                    color: isTop ? AppTheme.navy : Colors.grey[600],
+                    color:
+                        isTop ? AppTheme.navy : Colors.grey[600],
                   ),
                 ),
               ),
               Text(
                 '${(confidence * 100).toStringAsFixed(1)}%',
                 style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  color: color,
-                ),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: color),
               ),
             ],
           ),
@@ -233,7 +233,7 @@ class ConfidenceIndicator extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ResultCard  (top prediction hero card with confidence chip)
+// ResultCard
 // ─────────────────────────────────────────────────────────────────────────────
 class ResultCard extends StatelessWidget {
   final Prediction prediction;
@@ -259,6 +259,7 @@ class ResultCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Column(
@@ -284,68 +285,44 @@ class ResultCard extends StatelessWidget {
                   ],
                 ),
               ),
-              _ConfBadge(percentage: conf, color: color),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${(conf * 100).toStringAsFixed(0)}%',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: color,
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
-          _StatusChip(icon: icon, label: label, color: color),
-        ],
-      ),
-    );
-  }
-}
-
-class _ConfBadge extends StatelessWidget {
-  final double percentage;
-  final Color color;
-  const _ConfBadge({required this.percentage, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        '${(percentage * 100).toStringAsFixed(0)}%',
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w800,
-          color: color,
-        ),
-      ),
-    );
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  const _StatusChip(
-      {required this.icon, required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(99),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: color,
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(99),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 14, color: color),
+                const SizedBox(width: 5),
+                Text(label,
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: color)),
+              ],
             ),
           ),
         ],
@@ -355,7 +332,7 @@ class _StatusChip extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// BirdTile  (history list item)
+// BirdTile
 // ─────────────────────────────────────────────────────────────────────────────
 class BirdTile extends StatelessWidget {
   final Avistamiento avistamiento;
@@ -365,10 +342,8 @@ class BirdTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-// placeholder – just use File below
     final conf = avistamiento.confianza;
     final color = AppTheme.confidenceColor(conf);
-    final isValid = avistamiento.synced;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -387,13 +362,11 @@ class BirdTile extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                // Thumbnail
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: _Thumbnail(path: avistamiento.imagenPath),
                 ),
                 const SizedBox(width: 12),
-                // Info
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -416,55 +389,23 @@ class BirdTile extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 5),
                       Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 7, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: color.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(99),
-                            ),
-                            child: Text(
-                              '${(conf * 100).toStringAsFixed(0)}%',
-                              style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                  color: color),
-                            ),
+                          _SmallChip(
+                            label:
+                                '${(conf * 100).toStringAsFixed(0)}%',
+                            color: color,
                           ),
                           const SizedBox(width: 6),
-                          if (!isValid)
-                            const Row(
-                              children: [
-                                Icon(Icons.cloud_off,
-                                    size: 11, color: Colors.orange),
-                                SizedBox(width: 3),
-                                Text(
-                                  'Sin sync',
-                                  style: TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.orange,
-                                      fontWeight: FontWeight.w700),
-                                ),
-                              ],
-                            ),
-                          if (isValid)
-                            const Row(
-                              children: [
-                                Icon(Icons.check_circle,
-                                    size: 11, color: AppTheme.success),
-                                SizedBox(width: 3),
-                                Text(
-                                  'Validado',
-                                  style: TextStyle(
-                                      fontSize: 10,
-                                      color: AppTheme.success,
-                                      fontWeight: FontWeight.w700),
-                                ),
-                              ],
-                            ),
+                          if (avistamiento.synced)
+                            const _SmallChip(
+                                label: '✓ Validado',
+                                color: AppTheme.success)
+                          else
+                            const _SmallChip(
+                                label: '↑ Sin sync',
+                                color: Colors.orange),
                         ],
                       ),
                     ],
@@ -485,6 +426,31 @@ class BirdTile extends StatelessWidget {
   }
 }
 
+class _SmallChip extends StatelessWidget {
+  final String label;
+  final Color color;
+  const _SmallChip({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding:
+          const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(99),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            color: color),
+      ),
+    );
+  }
+}
+
 class _Thumbnail extends StatelessWidget {
   final String path;
   const _Thumbnail({required this.path});
@@ -494,8 +460,7 @@ class _Thumbnail extends StatelessWidget {
     try {
       final file = File(path);
       if (file.existsSync()) {
-        return Image.file(file,
-            width: 64, height: 64, fit: BoxFit.cover);
+        return Image.file(file, width: 64, height: 64, fit: BoxFit.cover);
       }
     } catch (_) {}
     return Container(

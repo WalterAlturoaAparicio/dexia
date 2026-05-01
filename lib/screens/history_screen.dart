@@ -1,12 +1,11 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../models/prediction.dart';
 import '../services/database_service.dart';
+import '../theme/app_theme.dart';
+import '../widgets/app_widgets.dart';
 
-/// Displays all locally saved sightings (RF08).
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
 
@@ -15,7 +14,8 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-  late Future<List<Avistamiento>> _futureAvistamientos;
+  late Future<List<Avistamiento>> _future;
+  _Filter _filtro = _Filter.todos;
 
   @override
   void initState() {
@@ -24,8 +24,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   void _reload() {
-    _futureAvistamientos =
-        DatabaseService.instance.getAllAvistamientos();
+    _future = DatabaseService.instance.getAllAvistamientos();
   }
 
   Future<void> _delete(int id) async {
@@ -35,180 +34,190 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
+      backgroundColor: AppTheme.bg,
       appBar: AppBar(
         title: const Text('Mis avistamientos'),
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
-      body: FutureBuilder<List<Avistamiento>>(
-        future: _futureAvistamientos,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-
-          final lista = snapshot.data ?? [];
-          if (lista.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.nature_people_outlined,
-                      size: 72, color: colorScheme.primary),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Aún no tienes avistamientos guardados.',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: lista.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
-            itemBuilder: (context, i) {
-              final av = lista[i];
-              return _AvistamientoTile(
-                avistamiento: av,
-                onDelete: () => _delete(av.id!),
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _AvistamientoTile extends StatelessWidget {
-  final Avistamiento avistamiento;
-  final VoidCallback onDelete;
-
-  const _AvistamientoTile({
-    required this.avistamiento,
-    required this.onDelete,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final dateStr = DateFormat('dd MMM yyyy – HH:mm', 'es')
-        .format(avistamiento.fechaHora);
-    final imagenExiste = File(avistamiento.imagenPath).existsSync();
-
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Row(
+      body: Column(
         children: [
-          // Thumbnail
-          SizedBox(
-            width: 90,
-            height: 90,
-            child: imagenExiste
-                ? Image.file(
-                    File(avistamiento.imagenPath),
-                    fit: BoxFit.cover,
-                  )
-                : Container(
-                    color: colorScheme.surfaceContainerHighest,
-                    child: Icon(Icons.broken_image_outlined,
-                        color: colorScheme.outline),
-                  ),
-          ),
-
-          // Info
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    avistamiento.especieNombre,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.bold),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    avistamiento.especieCientifico,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontStyle: FontStyle.italic,
-                          color: colorScheme.onSurfaceVariant,
+          // Filter chips
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Row(
+              children: _Filter.values.map((f) {
+                final active = f == _filtro;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: GestureDetector(
+                    onTap: () => setState(() => _filtro = f),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: active ? AppTheme.green : AppTheme.white,
+                        borderRadius: BorderRadius.circular(99),
+                        border: Border.all(
+                          color: active
+                              ? AppTheme.green
+                              : Colors.grey[300]!,
                         ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${(avistamiento.confianza * 100).toStringAsFixed(1)}% · $dateStr',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colorScheme.outline,
+                      ),
+                      child: Text(
+                        f.label,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: active ? AppTheme.white : Colors.grey[600],
                         ),
-                  ),
-                  if (!avistamiento.synced)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Row(
-                        children: [
-                          Icon(Icons.cloud_off,
-                              size: 12, color: colorScheme.error),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Sin sincronizar',
-                            style:
-                                TextStyle(fontSize: 11, color: colorScheme.error),
-                          ),
-                        ],
                       ),
                     ),
-                ],
-              ),
+                  ),
+                );
+              }).toList(),
             ),
           ),
 
-          // Delete
-          IconButton(
-            icon: const Icon(Icons.delete_outline),
-            color: colorScheme.error,
-            onPressed: () => showDialog(
-              context: context,
-              builder: (ctx) => AlertDialog(
-                title: const Text('Eliminar avistamiento'),
-                content: const Text(
-                    '¿Seguro que quieres eliminar este registro?'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    child: const Text('Cancelar'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      onDelete();
-                    },
-                    child: Text('Eliminar',
-                        style: TextStyle(color: colorScheme.error)),
-                  ),
-                ],
-              ),
+          const SizedBox(height: 12),
+
+          // List
+          Expanded(
+            child: FutureBuilder<List<Avistamiento>>(
+              future: _future,
+              builder: (context, snap) {
+                if (snap.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: AppTheme.green),
+                  );
+                }
+                if (snap.hasError) {
+                  return Center(child: Text('Error: ${snap.error}'));
+                }
+
+                final all = snap.data ?? [];
+                final lista = _aplicarFiltro(all);
+
+                if (lista.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.nature_people_outlined,
+                            size: 64, color: AppTheme.green.withValues(alpha: 0.4)),
+                        const SizedBox(height: 12),
+                        Text(
+                          all.isEmpty
+                              ? 'Aún no hay avistamientos'
+                              : 'Nada con este filtro',
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                  itemCount: lista.length,
+                  itemBuilder: (_, i) {
+                    final av = lista[i];
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (i == 0 ||
+                            !_sameDay(lista[i - 1].fechaHora, av.fechaHora))
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 8),
+                            child: Text(
+                              _formatDate(av.fechaHora),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.grey,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ),
+                        BirdTile(
+                          avistamiento: av,
+                          onDelete: av.id != null
+                              ? () => _confirmDelete(av.id!)
+                              : null,
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
             ),
           ),
         ],
       ),
     );
   }
+
+  List<Avistamiento> _aplicarFiltro(List<Avistamiento> all) {
+    switch (_filtro) {
+      case _Filter.todos:
+        return all;
+      case _Filter.validados:
+        return all.where((a) => a.synced).toList();
+      case _Filter.sinSync:
+        return all.where((a) => !a.synced).toList();
+    }
+  }
+
+  bool _sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  String _formatDate(DateTime dt) {
+    final now = DateTime.now();
+    if (_sameDay(dt, now)) return 'HOY';
+    if (_sameDay(dt, now.subtract(const Duration(days: 1)))) return 'AYER';
+    return DateFormat('d MMM yyyy', 'es').format(dt).toUpperCase();
+  }
+
+  void _confirmDelete(int id) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radiusLg)),
+        title: const Text('Eliminar avistamiento'),
+        content: const Text('¿Seguro que quieres eliminar este registro?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _delete(id);
+            },
+            child: const Text('Eliminar',
+                style: TextStyle(color: AppTheme.error)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+enum _Filter {
+  todos('Todos'),
+  validados('Validados'),
+  sinSync('Sin sync');
+
+  final String label;
+  const _Filter(this.label);
 }

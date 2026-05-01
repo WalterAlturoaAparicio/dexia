@@ -9,23 +9,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
-  # Image capture (RF01)
   image_picker: ^1.1.2
   permission_handler: ^11.3.1
-
-  # On-device inference (RF02)
   onnxruntime: ^1.4.0
   image: ^4.2.0
-
-  # Local storage / SQLite (RF08)
   sqflite: ^2.3.3+1
   path: ^1.9.0
-
-  # Formatting dates in HistoryScreen
   intl: ^0.19.0
-
-  # Icons (optional but nice)
   cupertino_icons: ^1.0.8
 
 dev_dependencies:
@@ -35,6 +25,17 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  fonts:
+    - family: Nunito
+      fonts:
+        - asset: assets/fonts/Nunito-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Nunito-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Nunito-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Nunito-ExtraBold.ttf
+          weight: 800
   assets:
     - assets/efficientnet_b0_best.onnx
     - assets/classes.json
