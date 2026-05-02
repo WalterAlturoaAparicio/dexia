@@ -43,7 +43,7 @@ class ResultadoInferencia {
   });
 }
 
-/// Represents a saved sighting stored locally (RF08).
+/// Un avistamiento guardado localmente (RF08 + RF05).
 class Avistamiento {
   final int? id;
   final String imagenPath;
@@ -52,7 +52,12 @@ class Avistamiento {
   final String especieId;
   final double confianza;
   final DateTime fechaHora;
-  final bool synced; // RF09 – will be used later for cloud sync
+  final bool synced;
+
+  // RF05 – Georreferenciación
+  final double? latitud;
+  final double? longitud;
+  final String? direccion; // reverse-geocode opcional (futuro)
 
   const Avistamiento({
     this.id,
@@ -63,7 +68,12 @@ class Avistamiento {
     required this.confianza,
     required this.fechaHora,
     this.synced = false,
+    this.latitud,
+    this.longitud,
+    this.direccion,
   });
+
+  bool get tieneUbicacion => latitud != null && longitud != null;
 
   Map<String, dynamic> toMap() => {
         if (id != null) 'id': id,
@@ -74,6 +84,9 @@ class Avistamiento {
         'confianza': confianza,
         'fechaHora': fechaHora.toIso8601String(),
         'synced': synced ? 1 : 0,
+        'latitud': latitud,
+        'longitud': longitud,
+        'direccion': direccion,
       };
 
   factory Avistamiento.fromMap(Map<String, dynamic> m) => Avistamiento(
@@ -85,9 +98,19 @@ class Avistamiento {
         confianza: (m['confianza'] as num).toDouble(),
         fechaHora: DateTime.parse(m['fechaHora'] as String),
         synced: (m['synced'] as int) == 1,
+        latitud: m['latitud'] as double?,
+        longitud: m['longitud'] as double?,
+        direccion: m['direccion'] as String?,
       );
 
-  Avistamiento copyWith({bool? synced, int? id}) => Avistamiento(
+  Avistamiento copyWith({
+    bool? synced,
+    int? id,
+    double? latitud,
+    double? longitud,
+    String? direccion,
+  }) =>
+      Avistamiento(
         id: id ?? this.id,
         imagenPath: imagenPath,
         especieNombre: especieNombre,
@@ -96,5 +119,8 @@ class Avistamiento {
         confianza: confianza,
         fechaHora: fechaHora,
         synced: synced ?? this.synced,
+        latitud: latitud ?? this.latitud,
+        longitud: longitud ?? this.longitud,
+        direccion: direccion ?? this.direccion,
       );
 }

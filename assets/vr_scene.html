@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>DexIA – Bosque VR</title>
+
+  <!-- A-Frame -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body { background: #1a2e1a; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+
+    /* ── Info card (tap on bird) ── */
+    #info-card {
+      display: none;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(20, 40, 20, 0.96);
+      border-top: 2px solid #80BA27;
+      border-radius: 24px 24px 0 0;
+      padding: 20px 24px 36px;
+      z-index: 9999;
+      animation: slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      backdrop-filter: blur(12px);
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    #info-card .handle {
+      width: 40px; height: 4px;
+      background: rgba(255,255,255,0.3);
+      border-radius: 2px;
+      margin: 0 auto 16px;
+    }
+    #info-card .bird-photo {
+      width: 80px; height: 80px;
+      border-radius: 16px;
+      object-fit: cover;
+      border: 2px solid #80BA27;
+      float: left;
+      margin-right: 14px;
+    }
+    #info-card .bird-photo-placeholder {
+      width: 80px; height: 80px;
+      border-radius: 16px;
+      background: #2E7D32;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px;
+      float: left;
+      margin-right: 14px;
+      border: 2px solid #80BA27;
+    }
+    #info-card h2 {
+      color: #80BA27;
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 2px;
+    }
+    #info-card .sci {
+      color: rgba(255,255,255,0.55);
+      font-style: italic;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    #info-card .chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      clear: both;
+      margin-top: 12px;
+    }
+    #info-card .chip {
+      padding: 4px 12px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    #info-card .chip-green { background: rgba(128,186,39,0.15); color: #80BA27; }
+    #info-card .chip-blue  { background: rgba(100,160,255,0.15); color: #64a0ff; }
+    #info-card .chip-gray  { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.6); }
+    #info-card .btn-close {
+      position: absolute;
+      top: 20px; right: 20px;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── HUD ── */
+    #hud {
+      position: fixed;
+      top: 16px; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.45);
+      color: rgba(255,255,255,0.85);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 16px;
+      border-radius: 99px;
+      z-index: 100;
+      pointer-events: none;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Exit button ── */
+    #btn-exit {
+      position: fixed;
+      top: 12px; right: 14px;
+      background: rgba(0,0,0,0.5);
+      color: white;
+      border: 1.5px solid rgba(255,255,255,0.3);
+      border-radius: 99px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      z-index: 9999;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── HUD ── -->
+<div id="hud">🌿 Mueve el teléfono para explorar</div>
+
+<!-- ── Exit ── -->
+<button id="btn-exit" onclick="exitVR()">✕ Salir</button>
+
+<!-- ── Info card ── -->
+<div id="info-card">
+  <div class="handle"></div>
+  <button class="btn-close" onclick="closeCard()">✕</button>
+  <div id="card-photo-wrap"></div>
+  <h2 id="card-nombre"></h2>
+  <div id="card-sci" class="sci"></div>
+  <div class="chips" id="card-chips"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     A-FRAME SCENE
+══════════════════════════════════════════════════════ -->
+<a-scene
+  id="scene"
+  vr-mode-ui="enabled: false"
+  embedded
+  style="width:100vw; height:100vh;"
+  renderer="antialias: true; colorManagement: true"
+  background="color: #0d1f0d">
+
+  <a-assets id="assets">
+    <!-- Fallback SVG textures (used when real photos unavailable) -->
+    <!-- Real images injected dynamically from Flutter -->
+  </a-assets>
+
+  <!-- ── Sky gradient ── -->
+  <a-sky color="#0d2b12"></a-sky>
+
+  <!-- ── LAYER 0: Distant fog/atmosphere ── -->
+  <a-entity id="layer-sky" position="0 0.5 -14">
+    <!-- Distant misty mountains -->
+    <a-plane
+      width="60" height="12"
+      color="#1a3d1a"
+      opacity="0.6"
+      position="0 0 0"
+      material="shader: flat; transparent: true; opacity: 0.5">
+    </a-plane>
+    <!-- Fog particles (animated) -->
+    <a-entity id="fog-left"
+      geometry="primitive: plane; width: 20; height: 6"
+      material="color: #2d5a2d; transparent: true; opacity: 0.25; shader: flat"
+      position="-10 -1 1"
+      animation="property: position; to: -8 -1 1; dur: 8000; easing: easeInOutSine; loop: true; dir: alternate">
+    </a-entity>
+    <a-entity id="fog-right"
+      geometry="primitive: plane; width: 18; height: 5"
+      material="color: #2d5a2d; transparent: true; opacity: 0.2; shader: flat"
+      position="9 -1.5 1"
+      animation="property: position; to: 7 -1.5 1; dur: 10000; easing: easeInOutSine; loop: true; dir: alternate">
+    </a-entity>
+  </a-entity>
+
+  <!-- ── LAYER 1: Background trees (far) ── -->
+  <a-entity id="layer-trees-far" position="0 0 -10">
+    <a-entity id="tree-gen-far"></a-entity>
+  </a-entity>
+
+  <!-- ── LAYER 2: Mid trees ── -->
+  <a-entity id="layer-trees-mid" position="0 -1.5 -5">
+    <a-entity id="tree-gen-mid"></a-entity>
+  </a-entity>
+
+  <!-- ── LAYER 3: Foreground grass/leaves ── -->
+  <a-entity id="layer-fg" position="0 -3 -2">
+    <a-plane
+      width="50" height="4"
+      color="#1a4d1a"
+      material="shader: flat"
+      position="0 0 0">
+    </a-plane>
+    <!-- Foreground leaf blurs -->
+    <a-plane width="8" height="5" color="#0d3d0d"
+      material="transparent: true; opacity: 0.7; shader: flat"
+      position="-7 2 2" rotation="0 15 0">
+    </a-plane>
+    <a-plane width="6" height="4" color="#0d3d0d"
+      material="transparent: true; opacity: 0.65; shader: flat"
+      position="7 2 2" rotation="0 -10 0">
+    </a-plane>
+  </a-entity>
+
+  <!-- ── LAYER 4: Bird sprites (injected by JS) ── -->
+  <a-entity id="bird-layer" position="0 0.5 -4"></a-entity>
+
+  <!-- ── Ambient light ── -->
+  <a-light type="ambient" color="#4a7c4a" intensity="0.8"></a-light>
+  <a-light type="directional" color="#80BA27" intensity="0.4"
+    position="2 4 -3"></a-light>
+
+  <!-- ── Camera with gyroscope look-controls ── -->
+  <a-entity id="camera-rig" position="0 0 0">
+    <a-camera
+      id="cam"
+      look-controls="magicWindowTrackingEnabled: true; pointerLockEnabled: false"
+      wasd-controls="enabled: false"
+      fov="80"
+      near="0.1"
+      far="200"
+      cursor="rayOrigin: mouse">
+    </a-camera>
+  </a-entity>
+
+</a-scene>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// DATA – injected by Flutter (replaced before loading)
+// ═══════════════════════════════════════════════════════════════
+let BIRD_DATA = __BIRD_DATA__;   // Flutter replaces this token
+
+// ═══════════════════════════════════════════════════════════════
+// TREE GENERATION
+// ═══════════════════════════════════════════════════════════════
+function makeTrees(containerId, count, scale, spread, color) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  for (let i = 0; i < count; i++) {
+    const x = (Math.random() - 0.5) * spread;
+    const z = (Math.random() - 0.5) * 4;
+
+    // Trunk
+    const trunk = document.createElement('a-cylinder');
+    trunk.setAttribute('radius', (0.08 + Math.random() * 0.06) * scale);
+    trunk.setAttribute('height', (2.5 + Math.random() * 2) * scale);
+    trunk.setAttribute('color', '#3d2b1a');
+    trunk.setAttribute('material', 'shader: flat');
+    trunk.setAttribute('position', `${x} 0 ${z}`);
+    container.appendChild(trunk);
+
+    // Canopy (2 spheres for volume)
+    const canopyH = (1.8 + Math.random() * 1.5) * scale;
+    for (let j = 0; j < 2; j++) {
+      const canopy = document.createElement('a-sphere');
+      const r = (0.9 + Math.random() * 0.7) * scale;
+      canopy.setAttribute('radius', r);
+      canopy.setAttribute('color', color);
+      canopy.setAttribute('material', 'shader: flat');
+      canopy.setAttribute('position',
+        `${x + (j * 0.3 - 0.15)} ${canopyH + j * 0.4} ${z + (j * 0.2 - 0.1)}`);
+      container.appendChild(canopy);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BIRD SPRITE PLACEMENT
+// ═══════════════════════════════════════════════════════════════
+const POSITIONS = [
+  [-2.5, 1.2, 0], [2.2, 0.8, -0.5], [0.5, 1.8, -1],
+  [-1.5, 0.3, 0.3], [3.0, 1.4, -0.8], [-3.5, 0.6, -0.2],
+  [1.2, 2.0, -1.2], [-0.8, 1.5, 0.5], [2.8, 0.2, 0],
+];
+
+// Gentle floating animation offsets per bird
+const FLOAT_OFFSETS = [0, 800, 1600, 400, 1200, 600, 1000, 300, 900];
+
+function buildBirdSprites() {
+  const layer = document.getElementById('bird-layer');
+  const assets = document.getElementById('assets');
+
+  BIRD_DATA.forEach((bird, i) => {
+    const pos = POSITIONS[i % POSITIONS.length];
+    const floatOff = FLOAT_OFFSETS[i % FLOAT_OFFSETS.length];
+
+    // ── Asset (image or colored plane) ──────────────────────
+    let materialAttr;
+    if (bird.imagePath && bird.imagePath.length > 10) {
+      const imgId = `bird-img-${i}`;
+      const img = document.createElement('img');
+      img.setAttribute('id', imgId);
+      img.setAttribute('src', bird.imagePath);
+      img.setAttribute('crossorigin', 'anonymous');
+      assets.appendChild(img);
+      materialAttr = `src: #${imgId}; transparent: true; alphaTest: 0.1; shader: flat; side: double`;
+    } else {
+      materialAttr = `color: ${bird.color || '#80BA27'}; transparent: true; opacity: 0.9; shader: flat`;
+    }
+
+    // ── Wrapper for float animation ──────────────────────────
+    const wrapper = document.createElement('a-entity');
+    wrapper.setAttribute('id', `bird-wrapper-${i}`);
+    wrapper.setAttribute('position', `${pos[0]} ${pos[1]} ${pos[2]}`);
+    // Float up/down
+    wrapper.setAttribute('animation__float',
+      `property: position;
+       to: ${pos[0]} ${pos[1] + 0.18} ${pos[2]};
+       dur: 3200; easing: easeInOutSine;
+       loop: true; dir: alternate; delay: ${floatOff}`);
+    // Gentle sway
+    wrapper.setAttribute('animation__sway',
+      `property: rotation;
+       to: 0 ${i % 2 === 0 ? 8 : -8} 3;
+       dur: 4500; easing: easeInOutSine;
+       loop: true; dir: alternate; delay: ${floatOff + 200}`);
+
+    // ── Billboard plane ──────────────────────────────────────
+    const plane = document.createElement('a-plane');
+    plane.setAttribute('width', '0.7');
+    plane.setAttribute('height', '0.7');
+    plane.setAttribute('material', materialAttr);
+    plane.setAttribute('look-at', '#cam');
+    plane.setAttribute('class', 'bird-sprite clickable');
+    plane.setAttribute('data-index', i);
+
+    // Tap/click → show info
+    plane.addEventListener('click', () => showCard(i));
+
+    // Pulse ring on hover
+    plane.addEventListener('mouseenter', () => {
+      plane.setAttribute('animation__pulse',
+        `property: scale; to: 1.15 1.15 1.15;
+         dur: 200; easing: easeOutQuad`);
+    });
+    plane.addEventListener('mouseleave', () => {
+      plane.setAttribute('animation__pulse',
+        `property: scale; to: 1 1 1;
+         dur: 200; easing: easeOutQuad`);
+    });
+
+    // ── Glow ring underneath ──────────────────────────────────
+    const ring = document.createElement('a-ring');
+    ring.setAttribute('radius-inner', '0.32');
+    ring.setAttribute('radius-outer', '0.4');
+    ring.setAttribute('color', '#80BA27');
+    ring.setAttribute('material', 'transparent: true; opacity: 0.5; shader: flat');
+    ring.setAttribute('rotation', '-90 0 0');
+    ring.setAttribute('position', '0 -0.38 0');
+    ring.setAttribute('animation__ring',
+      `property: material.opacity;
+       to: 0.15; dur: 1800;
+       easing: easeInOutSine; loop: true; dir: alternate; delay: ${floatOff}`);
+
+    // ── Name label ───────────────────────────────────────────
+    const label = document.createElement('a-text');
+    label.setAttribute('value', bird.nombre);
+    label.setAttribute('color', '#ffffff');
+    label.setAttribute('align', 'center');
+    label.setAttribute('width', '1.4');
+    label.setAttribute('position', '0 -0.46 0');
+    label.setAttribute('font', 'https://cdn.aframe.io/fonts/Exo2Bold.fnt');
+
+    wrapper.appendChild(plane);
+    wrapper.appendChild(ring);
+    wrapper.appendChild(label);
+    layer.appendChild(wrapper);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INFO CARD
+// ═══════════════════════════════════════════════════════════════
+function showCard(index) {
+  const bird = BIRD_DATA[index];
+  const card = document.getElementById('info-card');
+
+  document.getElementById('card-nombre').textContent = bird.nombre;
+  document.getElementById('card-sci').textContent = bird.cientifico;
+
+  // Photo
+  const photoWrap = document.getElementById('card-photo-wrap');
+  if (bird.imagePath && bird.imagePath.length > 10) {
+    photoWrap.innerHTML =
+      `<img src="${bird.imagePath}" class="bird-photo" onerror="this.outerHTML='<div class=bird-photo-placeholder>🦜</div>'">`;
+  } else {
+    photoWrap.innerHTML = `<div class="bird-photo-placeholder">🦜</div>`;
+  }
+
+  // Chips
+  const conf = Math.round(bird.confianza * 100);
+  const confColor = conf >= 85 ? 'chip-green' : conf >= 60 ? 'chip-blue' : 'chip-gray';
+  document.getElementById('card-chips').innerHTML = `
+    <span class="chip ${confColor}">${conf}% confianza</span>
+    <span class="chip chip-gray">${bird.fecha || 'Sin fecha'}</span>
+    ${bird.tieneUbicacion ? '<span class="chip chip-blue">📍 Con GPS</span>' : ''}
+  `;
+
+  card.style.display = 'block';
+}
+
+function closeCard() {
+  document.getElementById('info-card').style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EXIT – sends message back to Flutter WebView
+// ═══════════════════════════════════════════════════════════════
+function exitVR() {
+  try {
+    // Flutter WebView JS channel
+    FlutterChannel.postMessage('exit');
+  } catch(e) {
+    window.history.back();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PARALLAX on device orientation (gyroscope feel on 2D layers)
+// ═══════════════════════════════════════════════════════════════
+let lastGamma = 0;
+window.addEventListener('deviceorientation', (e) => {
+  const gamma = e.gamma || 0; // left/right tilt -90..90
+  const delta = gamma - lastGamma;
+  lastGamma = gamma;
+
+  const treeFar = document.getElementById('layer-trees-far');
+  const treeMid = document.getElementById('layer-trees-mid');
+  const sky     = document.getElementById('layer-sky');
+
+  if (treeFar) {
+    const cur = treeFar.getAttribute('position');
+    treeFar.setAttribute('position',
+      `${Math.max(-4, Math.min(4, cur.x - delta * 0.008))} ${cur.y} ${cur.z}`);
+  }
+  if (treeMid) {
+    const cur = treeMid.getAttribute('position');
+    treeMid.setAttribute('position',
+      `${Math.max(-6, Math.min(6, cur.x - delta * 0.015))} ${cur.y} ${cur.z}`);
+  }
+  if (sky) {
+    const cur = sky.getAttribute('position');
+    sky.setAttribute('position',
+      `${Math.max(-2, Math.min(2, cur.x - delta * 0.003))} ${cur.y} ${cur.z}`);
+  }
+}, { passive: true });
+
+// Close card on background tap
+document.getElementById('scene').addEventListener('click', (e) => {
+  if (!e.target.closest('#info-card')) closeCard();
+});
+
+// ═══════════════════════════════════════════════════════════════
+// INIT on scene loaded
+// ═══════════════════════════════════════════════════════════════
+document.querySelector('a-scene').addEventListener('loaded', () => {
+  makeTrees('tree-gen-far', 14, 0.7, 38, '#1f4d1f');
+  makeTrees('tree-gen-mid', 8,  1.0, 24, '#2a6b2a');
+  buildBirdSprites();
+
+  // Update HUD with bird count
+  document.getElementById('hud').textContent =
+    `🌿 ${BIRD_DATA.length} ave${BIRD_DATA.length !== 1 ? 's' : ''} en este bosque`;
+});
+</script>
+</body>
+</html>

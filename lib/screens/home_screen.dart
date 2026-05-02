@@ -11,7 +11,9 @@ import '../services/database_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_widgets.dart';
 import 'history_screen.dart';
+import 'map_screen.dart';
 import 'result_screen.dart';
+import 'vr_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -193,13 +195,13 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: AppTheme.bg,
       appBar: AppBar(
         title: const Text('DexIA Aves'),
-        actions: const [
+        actions: [
           Padding(
-            padding: EdgeInsets.only(right: 14),
+            padding: const EdgeInsets.only(right: 14),
             child: CircleAvatar(
               radius: 16,
               backgroundColor: AppTheme.green,
-              child: Text('MG',
+              child: const Text('MG',
                   style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
@@ -247,8 +249,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     label: 'Mapa',
                     subtitle: 'Mis avistamientos',
                     iconBg: const Color(0xFFE8EEF5),
-                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Mapa – próximamente'))),
+                    onTap: () => Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (_, a, __) => const MapScreen(),
+                        transitionsBuilder: (_, a, __, child) =>
+                            FadeTransition(opacity: a, child: child),
+                        transitionDuration:
+                            const Duration(milliseconds: 250),
+                      ),
+                    ),
                   ),
                   MainButtonCard(
                     icon: Icons.history_rounded,
@@ -270,12 +280,20 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   ),
                   MainButtonCard(
-                    icon: Icons.person_rounded,
-                    label: 'Perfil',
-                    subtitle: 'Mis logros',
-                    iconBg: const Color(0xFFFCE8E8),
-                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Perfil – próximamente'))),
+                    icon: Icons.view_in_ar_rounded,
+                    label: 'Álbum 3D',
+                    subtitle: 'Bosque virtual',
+                    iconBg: const Color(0xFFE8F5D0),
+                    onTap: () => Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (_, a, __) => const VrScreen(),
+                        transitionsBuilder: (_, a, __, child) =>
+                            FadeTransition(opacity: a, child: child),
+                        transitionDuration:
+                            const Duration(milliseconds: 300),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -334,7 +352,7 @@ class _SourceButton extends StatelessWidget {
           color: AppTheme.greenLight,
           borderRadius: BorderRadius.circular(AppTheme.radiusLg),
           border:
-              Border.all(color: AppTheme.green.withValues(alpha: 0.3)),
+              Border.all(color: AppTheme.green.withOpacity(0.3)),
         ),
         child: Column(
           children: [
