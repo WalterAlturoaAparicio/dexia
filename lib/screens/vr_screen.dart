@@ -76,11 +76,9 @@ class _VrScreenState extends State<VrScreen> {
   @override
   Widget build(BuildContext context) {
     if (_modoVr) {
-      return WillPopScope(
-        onWillPop: () async {
-          _salirModoVr();
-          return false;
-        },
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didpop, result) => _salirModoVr(),
         child: Scaffold(
           body: _VrWebView(
             avistamientos: _avistamientos,
@@ -170,10 +168,10 @@ class _AlbumCard extends StatelessWidget {
                   top: 8,
                   right: 8,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.85),
+                      color: color.withValues(alpha: 0.85),
                       borderRadius: BorderRadius.circular(99),
                     ),
                     child: Text(
@@ -247,8 +245,7 @@ class _CardImage extends StatelessWidget {
     } catch (_) {}
     return Container(
       color: AppTheme.greenLight,
-      child: const Icon(Icons.flutter_dash,
-          size: 48, color: AppTheme.green),
+      child: const Icon(Icons.flutter_dash, size: 48, color: AppTheme.green),
     );
   }
 }
@@ -276,7 +273,7 @@ class _ExploreButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppTheme.radiusLg),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.green.withOpacity(0.3),
+              color: AppTheme.green.withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -288,7 +285,7 @@ class _ExploreButton extends StatelessWidget {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: AppTheme.green.withOpacity(0.25),
+                color: AppTheme.green.withValues(alpha: 0.25),
                 borderRadius: BorderRadius.circular(AppTheme.radiusMd),
               ),
               child: const Icon(Icons.view_in_ar_rounded,
@@ -319,8 +316,7 @@ class _ExploreButton extends StatelessWidget {
               ),
             ),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: AppTheme.green,
                 borderRadius: BorderRadius.circular(AppTheme.radiusMd),
@@ -391,8 +387,7 @@ class _VrWebViewState extends State<_VrWebView> {
     }).toList();
 
     // Load HTML template and inject data
-    String html =
-        await rootBundle.loadString('assets/vr_scene.html');
+    String html = await rootBundle.loadString('assets/vr_scene.html');
     final jsonStr = jsonEncode(birdJson);
     html = html.replaceFirst('__BIRD_DATA__', jsonStr);
 
@@ -411,16 +406,31 @@ class _VrWebViewState extends State<_VrWebView> {
 
   String _formatFecha(DateTime dt) {
     final months = [
-      '', 'ene', 'feb', 'mar', 'abr', 'may', 'jun',
-      'jul', 'ago', 'sep', 'oct', 'nov', 'dic'
+      '',
+      'ene',
+      'feb',
+      'mar',
+      'abr',
+      'may',
+      'jun',
+      'jul',
+      'ago',
+      'sep',
+      'oct',
+      'nov',
+      'dic'
     ];
     return '${dt.day} ${months[dt.month]} ${dt.year}';
   }
 
   String _colorForIndex(int i) {
     const colors = [
-      '#80BA27', '#27AE60', '#2980B9',
-      '#8E44AD', '#E67E22', '#E74C3C',
+      '#80BA27',
+      '#27AE60',
+      '#2980B9',
+      '#8E44AD',
+      '#E67E22',
+      '#E74C3C',
     ];
     return colors[i % colors.length];
   }
@@ -438,8 +448,7 @@ class _VrWebViewState extends State<_VrWebView> {
               SizedBox(height: 16),
               Text('Cargando bosque…',
                   style: TextStyle(
-                      color: Colors.white70,
-                      fontWeight: FontWeight.w700)),
+                      color: Colors.white70, fontWeight: FontWeight.w700)),
             ],
           ),
         ),
@@ -463,7 +472,7 @@ class _EmptyAlbum extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.auto_stories_outlined,
-                size: 72, color: AppTheme.green.withOpacity(0.4)),
+                size: 72, color: AppTheme.green.withValues(alpha: 0.4)),
             const SizedBox(height: 16),
             const Text(
               'Tu álbum está vacío',

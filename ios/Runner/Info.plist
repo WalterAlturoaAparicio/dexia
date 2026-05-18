@@ -53,5 +53,7 @@
 	<string>Esta app puede guardar fotos clasificadas en tu galería.</string>
 	<key>NSMotionUsageDescription</key>
 	<string>Usamos el giroscopio para la experiencia 3D inmersiva.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Necesitamos tu ubicación para registrar dónde avistaste el ave.</string>
 </dict>
 </plist>

@@ -24,7 +24,8 @@ class LocationService {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        throw const LocationException('Permiso de ubicación denegado.');
+        throw const LocationException(
+            'Permiso de ubicación denegado.');
       }
     }
     if (permission == LocationPermission.deniedForever) {

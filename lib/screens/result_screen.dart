@@ -56,7 +56,8 @@ class _ResultScreenState extends State<ResultScreen>
     setState(() => _guardando = true);
     try {
       // Intentar obtener posición; si falla, guardamos sin coordenadas
-      final Position? pos = await LocationService.instance.tryGetPosition();
+      final Position? pos =
+          await LocationService.instance.tryGetPosition();
 
       final top = widget.resultado.top3.first;
       await DatabaseService.instance.insertAvistamiento(
@@ -127,7 +128,8 @@ class _ResultScreenState extends State<ResultScreen>
                     top: 12,
                     right: 12,
                     child: _TimerChip(
-                        ms: widget.resultado.tiempoInferencia.inMilliseconds),
+                        ms: widget.resultado.tiempoInferencia
+                            .inMilliseconds),
                   ),
                 ],
               ),
@@ -177,7 +179,8 @@ class _ResultScreenState extends State<ResultScreen>
                                 width: 18,
                                 height: 18,
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: AppTheme.white),
+                                    strokeWidth: 2,
+                                    color: AppTheme.white),
                               )
                             : const Icon(Icons.bookmark_add_rounded),
                         label: Text(_guardando
@@ -185,9 +188,11 @@ class _ResultScreenState extends State<ResultScreen>
                             : 'Guardar avistamiento'),
                         style: FilledButton.styleFrom(
                           backgroundColor: AppTheme.green,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 16),
                           textStyle: const TextStyle(
-                              fontSize: 15, fontWeight: FontWeight.w800),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800),
                         ),
                       ),
 
@@ -272,7 +277,7 @@ class _SavedBanner extends StatelessWidget {
               ),
             ],
           ),
-          if (hasGps) ...[
+          if (hasGps) ... [
             const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -291,9 +296,9 @@ class _SavedBanner extends StatelessWidget {
                 ),
               ],
             ),
-          ] else ...[
-            const SizedBox(height: 6),
-            const Row(
+          ] else ...const [
+             SizedBox(height: 6),
+             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.location_off_rounded,

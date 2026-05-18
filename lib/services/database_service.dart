@@ -28,12 +28,12 @@ class DatabaseService {
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
           // Migración v1 → v2: agregar columnas GPS
-          await db
-              .execute('ALTER TABLE avistamientos ADD COLUMN latitud  REAL');
-          await db
-              .execute('ALTER TABLE avistamientos ADD COLUMN longitud REAL');
-          await db
-              .execute('ALTER TABLE avistamientos ADD COLUMN direccion TEXT');
+          await db.execute(
+              'ALTER TABLE avistamientos ADD COLUMN latitud  REAL');
+          await db.execute(
+              'ALTER TABLE avistamientos ADD COLUMN longitud REAL');
+          await db.execute(
+              'ALTER TABLE avistamientos ADD COLUMN direccion TEXT');
         }
       },
     );
@@ -67,7 +67,8 @@ class DatabaseService {
   /// Todos los avistamientos, más recientes primero.
   Future<List<Avistamiento>> getAllAvistamientos() async {
     final db = await database;
-    final rows = await db.query('avistamientos', orderBy: 'fechaHora DESC');
+    final rows =
+        await db.query('avistamientos', orderBy: 'fechaHora DESC');
     return rows.map(Avistamiento.fromMap).toList();
   }
 
@@ -85,7 +86,8 @@ class DatabaseService {
   /// Pendientes de sincronizar con el backend (RF09 – futuro).
   Future<List<Avistamiento>> getUnsynced() async {
     final db = await database;
-    final rows = await db.query('avistamientos', where: 'synced = 0');
+    final rows =
+        await db.query('avistamientos', where: 'synced = 0');
     return rows.map(Avistamiento.fromMap).toList();
   }
 
@@ -97,7 +99,8 @@ class DatabaseService {
 
   Future<void> deleteAvistamiento(int id) async {
     final db = await database;
-    await db.delete('avistamientos', where: 'id = ?', whereArgs: [id]);
+    await db
+        .delete('avistamientos', where: 'id = ?', whereArgs: [id]);
   }
 
   Future<void> close() async => _db?.close();

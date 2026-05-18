@@ -195,13 +195,13 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: AppTheme.bg,
       appBar: AppBar(
         title: const Text('DexIA Aves'),
-        actions: [
+        actions: const [
           Padding(
-            padding: const EdgeInsets.only(right: 14),
+            padding: EdgeInsets.only(right: 14),
             child: CircleAvatar(
               radius: 16,
               backgroundColor: AppTheme.green,
-              child: const Text('MG',
+              child: Text('MG',
                   style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
@@ -352,7 +352,7 @@ class _SourceButton extends StatelessWidget {
           color: AppTheme.greenLight,
           borderRadius: BorderRadius.circular(AppTheme.radiusLg),
           border:
-              Border.all(color: AppTheme.green.withOpacity(0.3)),
+              Border.all(color: AppTheme.green.withValues(alpha: 0.3)),
         ),
         child: Column(
           children: [
