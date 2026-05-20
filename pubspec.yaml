@@ -13,6 +13,7 @@ dependencies:
   # Imagen
   image_picker: ^1.1.2
   permission_handler: ^11.3.1
+  crop_your_image: ^1.0.0
 
   # Inferencia on-device 
   onnxruntime: ^1.4.0

@@ -10,6 +10,7 @@ import '../services/classifier_service.dart';
 import '../services/database_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_widgets.dart';
+import 'crop_screen.dart';
 import 'history_screen.dart';
 import 'map_screen.dart';
 import 'result_screen.dart';
@@ -160,17 +161,45 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _procesarImagen(XFile xFile) async {
-    setState(() => _cargando = true);
     try {
-      final Uint8List bytes = await xFile.readAsBytes();
-      final ResultadoInferencia resultado =
-          await ClassifierService.instance.classify(bytes);
+      // 1. Leer bytes de la imagen original
+      final Uint8List rawBytes = await xFile.readAsBytes();
+
       if (!mounted) return;
+
+      // 2. Abrir pantalla de recorte manual – devuelve bytes ya recortados
+      //    (cuadrado, listo para el modelo) o null si el usuario cancela.
+      final Uint8List? croppedBytes = await Navigator.push<Uint8List>(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (_, a, __) => CropScreen(imageBytes: rawBytes),
+          transitionsBuilder: (_, a, __, child) =>
+              FadeTransition(opacity: a, child: child),
+          transitionDuration: const Duration(milliseconds: 280),
+        ),
+      );
+
+      // Usuario canceló el crop → no hacer nada
+      if (croppedBytes == null || !mounted) return;
+
+      // 3. Ahora sí iniciamos la clasificación con la imagen recortada
+      setState(() => _cargando = true);
+
+      final ResultadoInferencia resultado =
+          await ClassifierService.instance.classify(croppedBytes);
+
+      if (!mounted) return;
+
+      // 4. Navegar al resultado. Usamos el archivo original para mostrar
+      //    la foto completa al usuario, pero la clasificación se hizo
+      //    sobre el recorte cuadrado.
       await Navigator.push(
         context,
         PageRouteBuilder(
-          pageBuilder: (_, a, __) =>
-              ResultScreen(imagenFile: File(xFile.path), resultado: resultado),
+          pageBuilder: (_, a, __) => ResultScreen(
+            imagenFile: File(xFile.path),
+            resultado: resultado,
+          ),
           transitionsBuilder: (_, a, __, child) =>
               FadeTransition(opacity: a, child: child),
           transitionDuration: const Duration(milliseconds: 300),
